@@ -4,4 +4,4 @@ plugins {
 }
 
 rootProject.name = "isadamthereyetbot"
-include("app")
+include("bot")

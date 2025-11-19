@@ -4,12 +4,17 @@ guava = "33.5.0-jre"
 junitJupiter = "6.0.1"
 kotlin = "2.2.21"
 kotlinTest = "2.2.21"
+tgbotapi = "30.0.1"
+slf4j = "2.0.17"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junitJupiter" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref="kotlinTest" }
 junit-jupiter-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitJupiter" }
+tgbotapi = { module = "dev.inmo:tgbotapi", version.ref = "tgbotapi" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
