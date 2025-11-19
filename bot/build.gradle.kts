@@ -1,6 +1,9 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.detekt)
     application
 }
 
@@ -19,9 +22,14 @@ dependencies {
     implementation(libs.tgbotapi)
 }
 
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+}
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(22)
     }
 }
 
@@ -29,6 +37,15 @@ application {
     mainClass = "io.github.hhhannahmmmontana.isadamthereyet.BotKt"
 }
 
-tasks.named<Test>("test") {
+tasks.test {
     useJUnitPlatform()
+    failOnNoDiscoveredTests = false
+}
+
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "22"
+}
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "22"
 }

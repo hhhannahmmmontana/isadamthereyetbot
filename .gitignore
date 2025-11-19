@@ -4,7 +4,7 @@
 # Ignore Gradle build output directory
 build
 
-# IntelliJ Idea files
+# IntelliJIdea files
 .idea
 
 # macOS files
@@ -12,3 +12,6 @@ build
 
 # Sensitive data
 .env
+
+# Kotlin files
+.kotlin
