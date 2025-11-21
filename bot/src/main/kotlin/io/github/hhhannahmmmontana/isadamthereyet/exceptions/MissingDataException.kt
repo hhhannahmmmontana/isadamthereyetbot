@@ -1,0 +1,3 @@
+package io.github.hhhannahmmmontana.isadamthereyet.exceptions
+
+annotation class MissingDataException
