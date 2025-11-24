@@ -1,55 +1,49 @@
 package io.github.hhhannahmmmontana.isadamthereyet
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.google.common.io.Resources
 import dev.inmo.kslog.common.KSLog
 import dev.inmo.kslog.common.LogLevel
-import dev.inmo.kslog.common.defaultMessageFormatter
+import dev.inmo.kslog.common.defaultMessageFormatterWithErrorPrint
 import dev.inmo.kslog.common.setDefaultKSLog
-import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.telegramBot
-import dev.inmo.tgbotapi.extensions.behaviour_builder.buildBehaviourWithFSMAndStartLongPolling
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onText
-import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
-import dev.inmo.tgbotapi.types.message.content.MessageContent
 import io.github.hhhannahmmmontana.isadamthereyet.constants.TELEGRAM_TOKEN_ENV_NAME
-import io.github.hhhannahmmmontana.isadamthereyet.domain.BotData
-import io.github.hhhannahmmmontana.isadamthereyet.domain.UserData
 import io.github.hhhannahmmmontana.isadamthereyet.exceptions.NoTokenException
-import io.github.hhhannahmmmontana.isadamthereyet.states.BotState
-import io.github.hhhannahmmmontana.isadamthereyet.states.StartState
+import io.github.hhhannahmmmontana.isadamthereyet.extensions.buildIasmBehaviour
+import io.github.hhhannahmmmontana.isadamthereyet.states.CancelledState
+import io.github.hhhannahmmmontana.isadamthereyet.states.ErrorState
+import io.github.hhhannahmmmontana.isadamthereyet.states.FinishedState
+import io.github.hhhannahmmmontana.isadamthereyet.states.StateService
 
 val TOKEN: String = System.getenv(TELEGRAM_TOKEN_ENV_NAME) ?: throw NoTokenException()
 
+fun loadProps(): BotProperties {
+    val serializedProperties = Resources.toString(Resources.getResource("application.yml"), Charsets.UTF_8)
+    val mapper = YAMLMapper().registerKotlinModule()
+    return mapper.readValue<BotProperties>(serializedProperties)
+}
 suspend fun main() {
     val bot = telegramBot(TOKEN)
+    val properties = loadProps()
+
+    val stateService = StateService(
+        properties.clearStatesMinutes,
+        listOf(
+            ErrorState::class,
+            CancelledState::class,
+            FinishedState::class
+        )
+    )
 
     setDefaultKSLog(
         KSLog { level: LogLevel, tag: String?, message: Any, throwable: Throwable? ->
             if (level != LogLevel.VERBOSE) {
-                println(defaultMessageFormatter(level, tag, message, throwable))
+                println(defaultMessageFormatterWithErrorPrint(level, tag, message, throwable))
             }
         },
     )
 
-    bot.buildBehaviourWithFSMAndStartLongPolling<BotState> {
-        val botData = BotData(this, getMe())
-
-        onCommand("start") { message ->
-            startChain(
-                StartState(
-                    message.chat.id,
-                    generateUserData(message)
-                )
-            )
-        }
-
-        onStateOrSubstate<BotState> {
-            it.invoke(botData)
-        }
-
-    }.join()
-}
-
-fun<T : MessageContent> generateUserData(message: CommonMessage<T>): UserData {
-    return UserData(message.chat.id.chatId)
+    bot.buildIasmBehaviour(stateService).join()
 }

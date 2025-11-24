@@ -16,6 +16,8 @@ dependencies {
     testImplementation(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.jupiter.platform.launcher)
     implementation(libs.guava)
+    implementation(libs.jackson.dataformat.yaml)
+    implementation(libs.jackson.module.kotlin)
 
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.simple)
@@ -25,6 +27,7 @@ dependencies {
 detekt {
     buildUponDefaultConfig = true
     allRules = false
+    ignoreFailures = false
 }
 
 java {
@@ -35,6 +38,10 @@ java {
 
 application {
     mainClass = "io.github.hhhannahmmmontana.isadamthereyet.BotKt"
+}
+
+tasks.run {
+    dependsOn("detekt")
 }
 
 tasks.test {

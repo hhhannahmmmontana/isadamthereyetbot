@@ -1,54 +1,50 @@
 package io.github.hhhannahmmmontana.isadamthereyet.states
 
 import dev.inmo.tgbotapi.extensions.api.send.sendTextMessage
-import dev.inmo.tgbotapi.extensions.utils.types.buttons.replyKeyboard
-import dev.inmo.tgbotapi.extensions.utils.types.buttons.simpleButton
+import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.types.ChatIdentifier
-import dev.inmo.tgbotapi.utils.row
-import io.github.hhhannahmmmontana.isadamthereyet.domain.BotData
-import io.github.hhhannahmmmontana.isadamthereyet.domain.UserData
+import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
+import dev.inmo.tgbotapi.types.oneTimeKeyboardField
+import io.github.hhhannahmmmontana.isadamthereyet.ManagedBot
+import io.github.hhhannahmmmontana.isadamthereyet.states.exceptions.BadRequestStateException
+import io.github.hhhannahmmmontana.isadamthereyet.states.extensions.createReplyKeyboardMarkupFromBotStates
+import io.github.hhhannahmmmontana.isadamthereyet.states.extensions.createStates
+import io.github.hhhannahmmmontana.isadamthereyet.states.extensions.restoreBotState
+import io.github.hhhannahmmmontana.isadamthereyet.states.extradata.ExtraData
 
 class StartState(
-    override val context: ChatIdentifier,
-    override val userData: UserData
-) : BotState() {
-    override val icon: String = "\uD83D\uDE80"
+    override val context: ChatIdentifier
+) : ResumableBotState() {
+    private val linkedStates: List<IdentifiableBotState> by lazy {
+        createStates(
+            context,
+            listOf(
+                ViewChannelsState::class
+            )
+        )
+    }
 
-    override val viewName: String = "Начать работу"
-
-    override val className: String = StartState::class.simpleName!!
-
-    override suspend fun invoke(botData: BotData): BotState {
-        val states = createStates()
-
-        botData.sendTextMessage(
+    override suspend fun invoke(
+        bot: ManagedBot,
+        extraData: ExtraData?
+    ): BotState? {
+        bot.sendTextMessage(
             context,
             "Привет! Я Ждун.\n" +
                 "Я веду телеграм каналы, где люди что-то или кого-то ждут.\n" +
                 "Выбери комманду, я помогу все настроить",
-            replyMarkup = replyKeyboard {
-                for (command in states) {
-                    row {
-                        simpleButton(command.nameWithIcon)
-                    }
-                }
-            }
+            replyMarkup = createReplyKeyboardMarkupFromBotStates(linkedStates),
         )
 
-        val data = botData.pollReplyKeyboardUntilValidMessage(
-            states.map { it.nameWithIcon },
-            context,
-            "Нету такой комманды",
-            true,
-            states.map { "Выбран вариант: ${it.viewName}" }
-        )
-
-        return states.first { it.nameWithIcon == data }
+        return null
     }
 
-    fun createStates(): List<BotState> {
-        return listOf(
-            ChannelSelectState(context, userData)
-        )
+    override suspend fun resumeOnMessage(
+        bot: ManagedBot,
+        message: CommonMessage<*>,
+        extraData: ExtraData?
+    ): BotState {
+        val text = message.textOrNull() ?: throw BadRequestStateException()
+        return restoreBotState(text, linkedStates)
     }
 }
